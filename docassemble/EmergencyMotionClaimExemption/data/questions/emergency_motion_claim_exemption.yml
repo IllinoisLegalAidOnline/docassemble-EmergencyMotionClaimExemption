@@ -1,0 +1,1143 @@
+metadata:
+  title: Emergency Motion to Claim Exemption
+  short title: Emergency Claim Exemption
+  comment: This program helps you make forms to ask the judge for access to the money in your bank account as soon as possible.
+  authors:
+    - Vivian McNaughton
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ILAO:ilao-interview-framework.yml
+  - docassemble.ILAO:shared-basic-questions.yml
+---
+objects:
+  - users: ALPeopleList.using(there_are_any=True, complete_attribute=['complete'])
+  - users[i].lawyer: ALIndividual
+  - users[i].hand_delivery_address: ALAddress
+  - other_parties: ALPeopleList.using(there_are_any=True, complete_attribute=['complete'])
+  - other_parties[i].lawyer: ALIndividual
+  - other_parties[i].hand_delivery_address: ALAddress
+  - users[i].mail: ALAddress
+  - other_parties[i].mail: ALAddress
+  - users[i].carrier: ALAddress
+  - other_parties[i].carrier: ALAddress                      
+  - delivery_parties: ALPeopleList.using(there_are_any=True)
+  - delivery_parties[i].lawyer: ALIndividual
+  - bank: ALIndividual
+  - court_list: ALCourtLoader.using(file_name='docassemble.ILAO:data/sources/il_courts.xlsx')
+---
+code: |
+  ilao_easy_form_title = "Emergency Motion to Claim Exemption"
+  ilao_easy_form_url = "https://www.illinoislegalaid.org/legal-information/emergency-motion-claim-exemption"
+  github_user = 'IllinoisLegalAidOnline'
+  github_repo_name = 'docassemble-EmergencyMotionClaimExemption'
+  allowed_courts = ['Circuit']
+  al_form_type = 'existing_case'
+  form_name = "Emergency Motion to Claim Exemption"
+---
+# Road map
+sections:
+  - section_intro: Start
+  - section_qualify: Qualifying
+  - section_account: Your account
+  - section_case: Case details
+  - section_delivery: Delivery
+  - section_user: About you
+  - section_download: Download  
+---
+#interview code block
+mandatory: True
+code: |
+  nav.set_section('section_intro')
+  sees_nav_bar
+  snapshot_start
+  how_to_use
+  set_progress(5)
+  accept_terms
+  about_motion
+
+  nav.set_section('section_qualify')
+  if not money_judgment:
+    no_judgment_kickout
+  if not frozen_account:
+    not_frozen_kickout
+  if child_support:
+    child_support_kickout
+  if unpaid_taxes:
+    taxes_kickout
+
+  nav.set_section('section_account')
+  bank.name.first
+  if money_source['other'] and other_amount > 4000:
+    source_kickout
+  account_amount
+
+  nav.set_section('section_case')
+  other_parties.gather()
+  users.gather()
+  if trial_court_index == -1:
+    cook_district
+  after_filing
+  if has_court_date:
+    hearing_date
+
+  nav.set_section('section_delivery')
+  about_notice
+  if other_parties[0].is_represented == True:
+    other_parties[0].lawyer.name.first
+    other_parties[0].address.address
+  other_parties[0].efm_delivery
+  other_parties[0].delivery_date
+  bank.is_represented = False
+  bank.efm_delivery
+  bank.delivery_date
+  hand_delivery_info
+  users[0].address.address
+  users[0].has_email_address
+  e_signature
+
+  nav.set_section('section_download')
+  forms_assembling
+  get_docs_screen
+---
+#other parties gather loop
+code: |
+  other_parties[i].name.first
+  other_parties[i].complete = True
+---
+# users gather loop
+code: |
+  users[i].name.first
+  users[i].complete = True
+---
+code: |
+  stuff_to_snapshot = {
+  	'start_time': str(current_datetime().format_datetime()),
+  	'started_interview': True, 
+  	}
+
+  try:
+    stuff_to_snapshot['ip_address'] = device(ip=True)
+  except:
+    pass
+
+  stuff_to_snapshot['zip'] = showifdef('users[0].address.zip')
+
+  stuff_to_snapshot['downloaded_forms'] = showifdef('forms_assembling')
+  
+  store_variables_snapshot(
+  	data=stuff_to_snapshot, persistent=True
+  	)
+  snapshot_interview_state = True
+---
+code: |
+  snapshot_interview_state
+  snapshot_start = True  
+---
+code: |
+  reconsider('snapshot_interview_state')
+  snapshot_forms = True
+---
+id: welcome
+question: |
+  Emergency Motion to Claim Exemption
+subquestion: |
+  Welcome to Illinois Legal Aid Online's **Emergency Motion to Claim Exemption** Easy Form.
+
+  This program helps you make forms to ask the judge for access to the money in your bank account as soon as possible.
+
+  An *Emergency Motion to Claim Exemption* will ask the court to tell your bank to unfreeze your account for an emergency purpose. An emergency purpose can include paying for necessities like food, rent, or utilities.
+
+  To learn more, read ILAO's article about [**Collecting from wages and bank accounts**](https://www.illinoislegalaid.org/legal-information/money-and-property-debtors-can-protect-collection-agent).
+field: sees_nav_bar
+---
+id: instructions
+continue button field: how_to_use
+question: |
+  Instructions
+subquestion: |
+  To use this program you will need: 
+
+  * Source of funds in your bank account,
+  * Name and address of the bank that has your account,
+  * Name and address of the judgment creditor or creditor's lawyer, and
+  * Case number and filing County.
+
+  Set aside 10 to 20 minutes to finish this program. You can log in and save your work to return to later. 
+ 
+  ${ collapse_template(help_example) }  
+
+  Click on **{green words}** to learn what they mean. Some pages have a question mark in a circle ${ fa_icon("question-circle", color_css="#0dcaf0" ) } that helps explain things.
+---
+template: help_example
+subject: |
+  **You can click sections like this to show more information.**
+content: |  
+  This is an example of help. Click again to hide.
+---
+id: about motion
+continue button field: about_motion
+question: |
+  About the motion
+subquestion: |
+  You can file an *Emergency Motion to Claim Exemption* to get access to money in your bank account for an emergency purpose.
+
+  An emergency purpose could be a need to pay for basic necessities like food, rent, utilities, or others.
+
+  You do this by claiming the money is protected by law ("exempt") in your Motion. To learn more about collection proof income and property, read ILAO's article, [**Collecting from wages and bank accounts basics**](https://www.illinoislegalaid.org/node/31936).
+
+  ${collapse_template(exempt_money)}
+---
+template: exempt_money
+subject: |
+  **Exempt types of money**
+content: |
+  The following money is exempt:
+
+  * Social Security, SSI benefits and disability,
+  * Pension and retirement benefits and refunds,
+  * Public assistance benefits,
+  * Child support,
+  * Unemployment compensation benefits,
+  * Workers' compensation benefits,
+  * Veterans' benefits,
+  * Circuit breaker property tax relief benefits, and
+  * Any other source, up to $4,000.
+---
+id: money judgment
+question: |
+  Do you have a money judgment against you?
+subquestion: |
+  If you have gotten a copy of the court order saying that you are ordered to pay a creditor, this is a money judgment. This will have information about which court the judgment is from and the case number.
+fields:
+  - no label: money_judgment
+    datatype: yesnoradio
+---
+id: no judgment kickout
+event: no_judgment_kickout
+question: |
+  Sorry
+subquestion: |
+  You must have a money judgment against you to use this program.
+
+  If you made a mistake, you can click the **Back** button or **Restart** the interview.
+buttons:
+  - Exit: exit
+  - Restart: restart
+---
+id: frozen account
+question: |
+  Has your bank account been frozen because of a money judgment?
+subquestion: |
+  A creditor can file a citation to freeze your bank account if you did not pay them on the judgment.
+fields:
+  - no label: frozen_account
+    datatype: yesnoradio
+---
+id: not frozen kickout
+event: not_frozen_kickout
+question: |
+  Sorry
+subquestion: |
+  Your bank account must be frozen because of a money judgment to use this program.
+
+  If you made a mistake, you can click the **Back** button or **Restart** the interview.
+buttons:
+  - Exit: exit
+  - Restart: restart
+---
+id: child support
+question: |
+  Was your bank account frozen because you did not pay child support?
+fields:
+  - no label: child_support
+    datatype: yesnoradio
+---
+id: child support kickout
+event: child_support_kickout
+question: |
+  Sorry
+subquestion: |
+  You cannot use this program if your bank account was frozen because you did not pay child support.
+
+  If you made a mistake, you can click the **Back** button or **Restart** the interview.
+buttons:
+  - Exit: exit
+  - Restart: restart
+---
+id: unpaid taxes
+question: |
+  Was your bank account frozen because you did not pay taxes?
+fields:
+  - no label: unpaid_taxes
+    datatype: yesnoradio
+---
+id: taxes kickout
+event: taxes_kickout
+question: |
+  Sorry
+subquestion: |
+  You cannot use this program if your bank account was frozen because you did not pay taxes.
+
+  If you made a mistake, you can click the **Back** button or **Restart** the interview.
+buttons:
+  - Exit: exit
+  - Restart: restart
+---
+id: bank info
+question: |
+  Bank information
+subquestion: |
+  Enter the name and address of the bank with your frozen account.
+fields:
+  - Bank name: bank.name.first
+  - Street address: bank.address.address
+    address autocomplete: True
+  - Address line 2: bank.address.unit
+    required: False
+  - City: bank.address.city
+  - State: bank.address.state
+    code: |
+      states_list()   
+  - ZIP code: bank.address.zip
+---
+id: money source
+question: |
+  What is the source of the money in your frozen bank account?
+subquestion: |
+  Click all that apply.
+fields:
+  - Source: money_source
+    datatype: checkboxes
+    none of the above: False
+    choices:
+      - Social Security, SSI or disability benefits: social
+      - Pension and retirement benefits and refunds: retire
+      - Public assistance benefits: public
+      - Child support: child
+      - Unemployment compensation benefits: unemployment
+      - Workers' compensation benefits: workers
+      - Veterans' benefits: veterans
+      - Circuit breaker property tax relief benefits: circuit
+      - Other sources: other
+  - How much money in the account came from other sources?: other_amount
+    datatype: currency
+---
+id: source kickout
+event: source_kickout
+question: |
+  Sorry
+subquestion: |
+  You cannot use this program if more than $4,000 of the money in your account did not come from a qualifying source.
+
+  If you made a mistake, you can click the **Back** button or **Restart** the interview.
+buttons:
+  - Exit: exit
+  - Restart: restart
+---
+id: account amount
+question: |
+  How much is in your frozen account?
+subquestion: |
+  ${collapse_template(type_reminder)}
+fields:
+  - Amount: account_amount
+    datatype: currency
+---
+template: type_reminder
+subject: |
+  **Remind me what income sources can be unfrozen**
+content: |
+  * Social Security, SSI or disability benefits,
+  * Pension and retirement benefits and refunds,
+  * Public assistance benefits,
+  * Child support,
+  * Unemployment compensation benefits,
+  * Workers' compensation benefits,
+  * Veterans' benefits,
+  * Circuit breaker property tax relief benefits, and
+  * Any other source, up to $4,000.
+---
+id: other parties name
+question: |
+  % if i == 0:
+  What is the creditor's name?
+  % else:
+  What is the ${ordinal(i)} ${opposing_party}'s name?
+  % endif
+subquestion: |
+  % if i == 0:
+  The creditor is the person or company that has the money judgment against you.
+
+  If this is a person, enter their name exactly as it appears on the money judgment or citation.
+  % endif
+fields:
+  - code: |
+      other_parties[i].name_fields(person_or_business='unsure')
+
+---
+id: other parties there is another
+question: |
+  Are there any other ${opposing_party}s in this case?
+subquestion: |
+  % if len(other_parties.elements) >= 1:  
+  So far you have told us about ${other_parties.full_names()}.
+  % endif
+fields:
+  - no label: other_parties.there_is_another
+    datatype: yesnoradio
+---
+sets:
+  - users[i].name.first
+id: users names
+question: |
+  % if i == 0:
+  What is your name?
+  % else:
+  What is the name of the ${ ordinal(i) } ${party_label}?
+  % endif
+subquestion: |
+  % if i != 0:
+  ${ collapse_template(long_name_help) }
+  % endif
+fields:
+  - code: |
+        users[i].name_fields(person_or_business='unsure')
+---
+template: long_name_help
+subject: |
+  **What if I need more space?**
+content: |
+  If the person has a long name like "Jane Smith, Director of Housing," select **Business or organization**. You can then enter the full name and title.
+---
+id: any other users
+question: |
+    Was anyone else on your side of the case?
+subquestion: |
+  % if len(users.elements) > 1:  
+  So far you have told us about ${users.full_names()}.
+  % else:
+  If there are other ${party_label}s besides you, click **Yes**.
+  % endif
+fields:
+  - no label: users.there_is_another
+    datatype: yesnoradio
+---
+id: party label
+question: |
+  What was your role in the case?
+subquestion: |
+  ${ collapse_template(which_party) }  
+field: party_label
+choices:
+  - Plaintiff: plaintiff
+  - Petitioner: petitioner
+  - Defendant: defendant
+  - Respondent: respondent
+---
+template: which_party
+subject: |
+  **Learn more about roles and party labels**
+content: |
+  If you filed the original case, you are either the Plaintiff or the Petitioner.
+
+  If someone filed the original case against you, you are either the Defendant or the Respondent.
+
+  The other court forms in the case should help you figure it out. Look at the top (the caption) of the Petition, Complaint, or Order. That form should have a label by your name.
+---
+depends on:
+  - party_label
+code: |
+  if party_label == "plaintiff":
+    plaintiff_or_petitioner = True
+    opposing_party = "defendant"
+  elif party_label == "petitioner":
+    plaintiff_or_petitioner = True
+    opposing_party = "respondent"
+  elif party_label == "defendant":
+    plaintiff_or_petitioner = False
+    opposing_party = "plaintiff"
+  elif party_label == "respondent":
+    plaintiff_or_petitioner = False
+    opposing_party = "petitioner"
+---
+id: case number
+question: |
+  What is the case number?
+subquestion: |
+  The **{circuit court clerk}** gives each case a number when it is filed.
+
+  The case number is in the caption near the top of the first page of the court forms.
+fields:
+  - Case number: case_number
+---
+id: county
+continue button field: county
+question: |
+  In which county was the court case filed?
+subquestion: |
+  The county should be listed near the top of the court papers.
+fields:
+  - County: trial_court_index
+    datatype: integer
+    code: |
+      court_county_lookup()
+---
+id: Cook County district
+question: |
+  In which Cook County courthouse was the court case filed?
+subquestion: |
+  ${ collapse_template(cook_district_help) }  
+field: cook_district
+choices:
+  - First Municipal District, Daley Center, 50 W. Washington Street, Chicago: 15
+    help: |
+      The First Municipal District covers the **City of Chicago**. 
+  - Second Municipal District, 5600 Old Orchard Road, Skokie: 16
+    help: |
+      The Second Municipal District covers the **northern suburbs of Cook County**. It includes:
+      
+      * Deerfield
+      * Des Plaines
+      * Evanston
+      * Glencoe
+      * Glenview
+      * Golf
+      * Kenilworth
+      * Lincolnwood
+      * Maine (not within Rosemont)
+      * Morton Grove
+      * New Trier
+      * Niles
+      * Northbrook
+      * Northfield (not within Prospect Heights)
+      * Park Ridge
+      * Skokie
+      * Wilmette
+      * Winnetka
+      * Wheeling (within Des Plaines)
+  - Third Municipal District, 2121 Euclid Avenue, Rolling Meadows: 17
+    help: |
+      The Third Municipal District covers the **northwestern suburbs of Cook County**. It includes:
+
+      * Arlington Heights
+      * Barrington
+      * Barrington Hills
+      * Bartlett
+      * Bensenville
+      * Buffalo Grove
+      * East Dundee
+      * Elgin
+      * Elk Grove
+      * Elk Grove Village
+      * Hanover
+      * Hanover Park
+      * Harwood Heights
+      * Hoffman Estates
+      * Inverness
+      * Leyden (within Rosemont and Schiller Park)
+      * Maine (within Rosemont)
+      * Mount Prospect
+      * Norridge
+      * Northfield (within Prospect Heights)
+      * Norwood Park (not within Chicago)
+      * Palatine
+      * Prospect Heights
+      * Rolling Meadows
+      * Roselle
+      * Rosemont
+      * Schaumburg
+      * Schiller Park
+      * South Barrington
+      * Streamwood
+      * Wheeling (not within Des Plaines)    
+  - Fourth Municipal District, 1500 Maybrook Drive, Maywood: 18
+    help: |
+      The Fourth Municipal District covers the **western suburbs of Cook County**. It includes:
+      
+      * Bellwood
+      * Berkeley
+      * Berwyn
+      * Broadview
+      * Brookfield
+      * Cicero
+      * Elmwood Park
+      * Forest Park
+      * Franklin Park
+      * Hillside
+      * La Grange Park
+      * Leyden (not within Rosemont and Schiller Park)
+      * Maywood
+      * Melrose Park
+      * Northlake
+      * North Riverside
+      * Oak Park
+      * Proviso
+      * River Forest
+      * River Grove
+      * Riverside
+      * Stone Park
+      * Westchester  
+  - Fifth Municipal District, 10220 S. 76th Avenue, Bridgeview: 19
+    help: |
+      The Fifth Municipal District covers the **southwestern suburbs of Cook County**. It includes:
+      
+      * Alsip
+      * Bedford Park
+      * Bridgeview
+      * Burbank
+      * Burr Ridge
+      * Chicago Ridge
+      * Crestwood
+      * Countryside
+      * Evergreen Park
+      * Forest View
+      * Hickory Hills
+      * Hinsdale
+      * Hodgkins
+      * Hometown
+      * Indian Head Park
+      * Justice
+      * La Grange
+      * Lemont
+      * Lyons
+      * McCook
+      * Merrionette Park
+      * Oak Forest
+      * Oak Lawn
+      * Orland Hills
+      * Orland Park
+      * Palos
+      * Palos Heights
+      * Palos Hills
+      * Palos Park
+      * Stickney
+      * Summit
+      * Tinley Park
+      * Western Springs
+      * Willow Springs
+      * Woodridge
+      * Worth
+  - Sixth Municipal District, 16501 South Kedzie Parkway, Markham: 20
+    help: |
+      The Sixth Municipal District covers the **southern suburbs of Cook County**. It includes:
+      
+      * Bloom
+      * Blue Island
+      * Bremen
+      * Burnham
+      * Calumet
+      * Calumet City
+      * Calumet Park
+      * Chicago Heights
+      * Country Club Hills
+      * Crete
+      * Dixmoor
+      * Dolton
+      * East Hazel Crest
+      * Flossmoor
+      * Ford Heights
+      * Glenwood
+      * Harvey
+      * Hazel Crest
+      * Homewood
+      * Lansing
+      * Lynwood
+      * Markham
+      * Matteson
+      * Midlothian
+      * Olympia Fields
+      * Park Forest
+      * Phoenix
+      * Posen
+      * Rich
+      * Richton Park
+      * Riverdale
+      * Robbins
+      * Sauk Village
+      * South Chicago Heights
+      * South Holland
+      * Steger
+      * Thornton  
+---
+template: cook_district_help
+subject: |
+  **What if I am not sure?**
+content: |  
+  Visit **[Illinois Court Help](https://www.ilcourthelp.gov/)**, or you can call or text (833) 411-1121 for assistance.
+---
+code: |
+  def court_county_lookup(lowercase=False):
+    all_court_counties = court_list._load_courts()['address_county'].items()
+    filtered_courts = [(-1, "cook")] if lowercase else [(-1, "Cook")]
+    for court in all_court_counties:
+      if court[1] != "Cook":
+        court_name = court[1].lower() if lowercase else court[1]
+        filtered_courts.append((court[0],court_name))
+    return sorted( filtered_courts, key=lambda y: y[1])
+---
+depends on:
+  - trial_court_index
+  - cook_district
+code: |
+  if trial_court_index == -1:
+    trial_court = court_list.as_court('trial_court', cook_district)
+  else:
+    trial_court = court_list.as_court('trial_court', trial_court_index)
+    
+  court_name = str(trial_court.name)
+  court_street_address = str(trial_court.address.address)
+  court_full_street = str(trial_court.address.line_one(bare=True))
+  court_city = str(trial_court.address.city)
+  court_state = str(trial_court.address.state)
+  court_zip = str(trial_court.address.zip)
+  court_csz = str(trial_court.address.line_two())
+  courthouse_info = court_name + ", " + court_street_address + ", " + court_city + ", " + court_state + " " + court_zip
+---
+template: county_lookup_help
+subject: |
+  **How do I look up the county?**
+content: |  
+  You can use this [**City-to-County Finder**](https://www.statsamerica.org/CityCountyFinder/) to find the county.
+---
+id: after filing
+continue button field: after_filing
+question: |
+  After filing
+subquestion: |
+  When you file your motion, court clerk will give you a:
+
+  * Hearing date,
+  * Hearing time, and
+  * Courtroom number.
+
+  You must add this information to the *Notice of Court Date for Emergency Motion to Claim Exemption*. Add this before you deliver it to the bank and the creditor, or their lawyers.
+---
+id: hearing scheduled
+question: |
+  Do you know the date and time of your hearing?
+subquestion: |
+  In some counties, the circuit clerk can give you a hearing date before you file your motion. This is sometimes called the Return Date. If you have that information now, you can add it to your forms.
+  
+  If the clerk gives you the hearing date after you file your *Emergency Motion to Claim Exemption* with the court, you can add it to your form later.
+
+  You must add this information to the citation before you deliver it to ${other_parties[0].name.full(middle='full')}.
+fields:
+  - "Know court date and time?": has_court_date
+    datatype: yesnoradio
+---
+id: hearing info
+question: |
+  Court hearing information
+subquestion: |
+  Enter the date, time, and courtroom information for your hearing.
+
+  If you do not know this yet, you can leave these fields blank. You must add this information to the notice before you deliver it to ${other_parties[0].name.full(middle='full')}.
+fields:
+  - Date: hearing_date
+    datatype: date
+    min: ${ today().format("yyyy-MM-dd") }
+    required: False
+  - Time: hearing_time
+    datatype: time
+    required: False
+  - Hearing type: hearing_type
+    input type: radio
+    required: False
+    choices:
+      - In person: person
+      - By phone or video: remote
+  - Courtroom: courtroom
+    maxlength: 10
+    required: False
+    js show if:
+     val('hearing_type') === "person"
+  - Instructions for attending by phone or video: remote_instructions
+    required: False
+    input type: area
+    js show if:
+      val('hearing_type') === "remote"
+---
+id: about notice
+continue button field: about_notice
+question: |
+  Giving notice
+subquestion: |
+  The creditor and bank must receive notice of your Emergency Motion to Claim Exemption. You cannot have a court hearing unless this notice is given.
+
+  Hand-delivering or emailing these forms to your creditor and your bank may be faster, which could mean your money would be unfrozen sooner.
+---
+id: users delivery party address
+sets:
+  - users[i].address.address
+  - users[i].address.city
+  - users[i].address.zip
+generic object: ALIndividual
+question: |
+  % if users[i].is_represented:
+  What is ${ users[i].lawyer.name.full(middle="full") }'s address?
+  % else:
+  What is ${ users[i].name.full(middle="full") }'s address?
+  % endif
+fields:
+  - Street address: users[i].address.address
+    address autocomplete: True
+  - Address line 2: users[i].address.unit
+    required: False
+  - City: users[i].address.city
+  - State: users[i].address.state
+    code: |
+      states_list()
+    default: IL      
+  - ZIP code: users[i].address.zip
+---
+id: user address
+question: |
+  What is your address?
+fields:
+  - Street address: users[0].address.address
+    address autocomplete: True
+  - Address line 2: users[0].address.unit
+    required: False
+  - City: users[0].address.city
+  - State: users[0].address.state
+    code: |
+      states_list()
+    default: IL      
+  - ZIP code: users[0].address.zip
+---
+generic object: ALIndividual
+id: has lawyer
+question: |
+  Does ${ x.name.full(middle="full") } have a lawyer in this case?
+field: x.is_represented
+choices:
+  - Yes: True
+  - No: False
+  - I don't know.: null 
+# note: null will be None in review screen
+---
+id: add lawyer
+generic object: ALIndividual
+question: |
+  Who is ${ x.full_name() }'s lawyer?
+fields:
+  - First name: x.lawyer.name.first
+  - Middle name: x.lawyer.name.middle
+    required: False
+  - Last name: x.lawyer.name.last
+  - Suffix: x.lawyer.name.suffix
+    code: |
+      name_suffix()
+    required: False   
+---
+generic object: ALIndividual
+id: party delivery method
+question: |
+  % if x.is_represented:
+  How will you send your forms to ${ x.lawyer.name.full(middle="full") }?
+  % else:
+  How will you send your forms to ${ x.name.full(middle="full") }?
+  % endif
+subquestion: |  
+  If the other party listed an email address on the court documents, you must send the forms to them by email or through the e-filing system. You may use US mail or a delivery company, or hand delivery if you or the other party **does not** have an email address. If you are in a prison or jail, you can deliver by mail.
+
+  For best results, complete the Proof of Delivery section and send the forms today.
+
+  **Note:** If you do not know this now, be sure to add it to the Proof of Delivery section of your forms later.
+
+  ${ collapse_template(efiling_help) }
+fields:
+  - E-filing system: x.efm_delivery
+    datatype: yesnowide
+    help: |
+      The court's e-filing system could be any approved electronic filing service provider (EFSP).
+  - Email: x.email_delivery
+    datatype: yesnowide
+  - Email address (for e-filing system or email delivery): x.delivery_email
+    datatype: email
+    js show if: 
+      val("x.efm_delivery") == true || val("x.email_delivery") == true
+    required: False
+  - US mail: x.mail_delivery
+    datatype: yesnowide                                                   
+  - Address or intersection of post office or mailbox: x.mail.address
+    address autocomplete: False
+    show if: 
+      variable: x.mail_delivery
+      is: True
+    required: False
+  - City: x.mail.city
+    show if: 
+      variable: x.mail_delivery
+      is: True
+    required: False
+  - State: x.mail.state
+    code: |
+      states_list()    
+    show if: 
+      variable: x.mail_delivery
+      is: True
+    required: False
+  - Delivery company (like UPS or FedEx): x.by_third_party
+    datatype: yesnowide
+  - Address or intersection of delivery company: x.carrier.address
+    address autocomplete: False
+    show if: 
+      variable: x.by_third_party
+      is: True
+    required: False
+  - City of third-party carrier: x.carrier.city
+    show if: 
+      variable: x.by_third_party
+      is: True
+    required: False
+  - State of third-party carrier: x.carrier.state
+    code: |
+      states_list()    
+    show if: 
+      variable: x.by_third_party
+      is: True
+    required: False
+  - Hand delivery: x.hand_delivery
+    datatype: yesnowide
+    help: |
+      You can only deliver to the party, the party's family member over 13 at their residence, the party's lawyer, or their lawyer's office.
+  - Street address: x.hand_delivery_address.address
+    address autocomplete: True
+    show if: 
+      variable: x.hand_delivery
+      is: True
+    required: False
+  - Address line 2: x.hand_delivery_address.unit
+    show if: 
+      variable: x.hand_delivery
+      is: True
+    required: False
+  - City: x.hand_delivery_address.city
+    show if: 
+      variable: x.hand_delivery
+      is: True
+    required: False
+  - State: x.hand_delivery_address.state
+    code: |
+      states_list()
+    default: IL      
+    show if: 
+      variable: x.hand_delivery
+      is: True
+    required: False
+  - ZIP code: x.hand_delivery_address.zip
+    show if: 
+      variable: x.hand_delivery
+      is: True
+    required: False
+  - By mail from a prison or jail: x.jail_delivery
+    datatype: yesnowide
+  - Name of prison or jail: x.delivery_jail_name
+    maxlength: 40
+    show if: 
+      variable: x.jail_delivery
+      is: True
+    required: False
+---
+template: efiling_help
+subject: |
+  **What if I need help?**
+content: |  
+  If you need help delivering by email or using the e-filing service provider, you can visit a [**Legal Self-Help Center**](https://www.illinoislegalaid.org/get-legal-help/lshc-directory) or you can call or text [**Illinois Court Help**](https://www.ilcourthelp.gov) at 833-411-1121.
+---
+id: delivery time
+generic object: ALIndividual
+question: |
+  % if x.is_represented:
+  When will you send your forms to ${ x.lawyer.name.full(middle="full") }?
+  % else:
+  When will you send your forms to ${ x.name.full(middle="full") }?
+  % endif
+subquestion: |
+  For best results, complete the Proof of Delivery section and send the forms today.
+
+  **Note:** If you do not know this now, be sure to add it to the Proof of Delivery section of your forms later.
+fields:
+  - Date: x.delivery_date
+    datatype: date
+    required: False
+    max: ${ today().plus(years=1) }
+  - Time: x.delivery_time
+    datatype: time
+    required: False
+validation code: |
+  if (not showifdef('x.delivery_date')):
+    x.knows_delivery_date = False
+  else:
+    x.knows_delivery_date = True
+  if (not showifdef('x.delivery_time')):
+    x.knows_delivery_time = False
+  else:
+    x.knows_delivery_time = True
+---
+id: hand delivery info
+continue button field: hand_delivery_info
+question: |
+  Check your Proof of Delivery
+subquestion: |
+  **Don't forget!** Make sure you review and complete the Proof of Delivery section of your forms. 
+  
+  [FILE proof_of_delivery_snip_2025.png, 100%, Proof of Delivery section of forms]
+
+  **Instructions when delivering your forms by hand:**
+
+  * If a party in your case does not have a lawyer, you can hand-deliver the forms to them or to a family member who is 13 or older at their home.
+  * If they do have a lawyer, you can hand-deliver the forms to the lawyer or to the lawyer's office.
+---
+id: delivery time
+generic object: ALIndividual
+question: |
+  % if x.is_represented:
+  When will you send your forms to ${ x.lawyer.name.full(middle="full") }?
+  % else:
+  When will you send your forms to ${ x.name.full(middle="full") }?
+  % endif
+subquestion: |
+  For best results, complete the Proof of Delivery section and send the forms today.
+
+  **Note:** If you do not know this now, be sure to add it to the Proof of Delivery section of your forms later.
+fields:
+  - Date: x.delivery_date
+    datatype: date
+    required: False
+    max: ${ today().plus(years=1) }
+  - Time: x.delivery_time
+    datatype: time
+    required: False
+validation code: |
+  if (not showifdef('x.delivery_date')):
+    x.knows_delivery_date = False
+  else:
+    x.knows_delivery_date = True
+  if (not showifdef('x.delivery_time')):
+    x.knows_delivery_time = False
+  else:
+    x.knows_delivery_time = True
+---
+sets:
+  - users[0].has_email_address
+id: your contact information
+generic object: ALIndividual
+question: |
+  What is your contact information?
+subquestion: |
+  The court or other parties might need to contact you about this case.
+
+  **This information will appear on your court forms.**
+  
+  If you do not want to list a phone number on your forms, leave it blank.
+
+  If you have an email address, you must list it. Be sure to check your email daily, otherwise you may miss important information about your case.
+
+  ${ collapse_template(contact_info_help) }  
+fields:  
+  - Phone number: users[0].phone_number
+    datatype: al_international_phone
+    required: False
+  - label: |
+      Do you have an email address?
+    field: users[0].has_email_address      
+    datatype: yesnoradio
+  - note: |
+      This email address will appear on your court forms. Be sure to check 
+      this email daily, otherwise you may miss important information about 
+      your case.
+    show if: users[0].has_email_address      
+  - Email address: users[0].email    
+    datatype: email
+    show if: 
+      variable: users[0].has_email_address
+      is: True
+---
+template: contact_info_help
+subject: |
+  **What if I don't want to list my email address?**
+content: |  
+  If you do not want to enter your personal email address, you can create a new email account to get email about your case.
+  
+  To make a new email account try one of these email services:
+  
+  * [**Gmail**](https://accounts.google.com/SignUp)
+  * [**Outlook**](https://outlook.live.com/owa/?nlp=1&signup=1)
+  * [**Yahoo**](https://login.yahoo.com/account/create?.lang=en-US&.intl=us)
+---
+id: user e-signature
+question: |
+  Do you want to add your e-signature to your forms?
+subquestion: |
+  This program can put “**/s/ ${users[0].name.full(middle='full')}**” where you would sign your name. The court will accept this as your signature.
+
+  If you do not add your **{e-signature}**, you must sign your paper forms before you file and deliver them.
+
+  <div class="alert alert-info ilao-info" role="alert">
+    <h6 class="alert-heading">What it means to sign your forms</h6>
+    <p>By signing your court forms you are certifying that:</p>
+    <p><ul>
+      <li>Everything on the forms is true and correct, and</li>
+      <li>You understand that making a false statement on the form is perjury, which can result in criminal penalties.</li>
+    </ul></p>
+  <p>See the <a href="https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm"><b>Code of Civil Procedure, 735 ILCS 5/1-109</b></a> for more information.</p>
+  </div>
+fields:
+  - "Add e-signature?": e_signature
+    datatype: yesnoradio
+terms:
+  - "e-signature": |
+      An e-signature is an electronic signature. It is a digital version of a signature that has the same effect as a hand-written signature. 
+---
+id: forms assembling
+continue button field: forms_assembling
+question: |
+  Almost done
+subquestion: |
+  After you click **Next**, it may take a few moments to finish making your forms.
+  
+  ###### You do not need to refresh your screen. Hang in there!
+  
+  [NEWLINE]
+---
+id: get docs screen
+event: get_docs_screen
+question: |
+  Download
+subquestion: |  
+  Your forms are ready. View and download your forms below. Click **Make changes** to fix any mistakes.
+
+  This program **does not file** your forms with the court or deliver them to other parties in your case. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/information-for-filers-without-lawyers).
+
+  ${ action_button_html(url_action('review_answers'), label=':edit: Make changes', color='success', size="md") }
+  
+  ${ al_user_bundle.download_list_html() }
+
+  &nbsp;
+
+  ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
+
+  **Note:** This program **does not file** your forms with the court or deliver them to other parties in your case. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/information-for-filers-without-lawyers).
+  
+  Thank you for using ILAO Easy Forms!
+under: |
+  % if not user_logged_in():
+  [${fa_icon("sign-in-alt", color="#0079d0", size="sm")} **Sign-in**](${url_of('login', next=interview_url())}) or [**create**](${url_of('register', next=interview_url())}) an ILAO Easy Form account to save your progress (optional).
+  % endif 
+
+  &nbsp;
+  ${ action_button_html(interview_url(i="docassemble.ILAO:feedback.yml", easy_form_interview=ilao_easy_form_url, easy_form_title=ilao_easy_form_title, easy_form_page=current_context().question_id, easy_form_variable=current_context().variable, local=False,reset=1), label=':comment: Was this program helpful?', color="#181c36", size="md", new_window=True) }
+---
+generic object: ALDocumentBundle
+template: x.send_email_template
+subject: |
+ Emergency Motion to Claim Exemption forms
+content: |
+  Your forms are attached.
+  
+  Thanks for using ILAO Easy Forms!
+  
+  [Illinois Legal Aid Online](https://www.illinoislegalaid.org)
