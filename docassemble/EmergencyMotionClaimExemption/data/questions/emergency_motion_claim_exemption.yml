@@ -60,10 +60,10 @@ code: |
   about_motion
 
   nav.set_section('section_qualify')
-  if not money_judgment:
-    no_judgment_kickout
   if not frozen_account:
     not_frozen_kickout
+  if not money_judgment:
+    no_judgment_kickout
   if child_support:
     child_support_kickout
   if unpaid_taxes:
@@ -72,8 +72,8 @@ code: |
   nav.set_section('section_account')
   set_progress(20)
   bank.name.first
-  if money_source['other'] and other_amount > 4000:
-    source_kickout
+  money_source
+  source_note
   account_amount
 
   nav.set_section('section_case')
@@ -82,6 +82,7 @@ code: |
   case_number
   if trial_court_index == -1:
     cook_district
+  court_county
   set_progress(40)
   after_filing
   if has_court_date:
@@ -156,13 +157,11 @@ code: |
 ---
 id: welcome
 question: |
-  Emergency Motion to Claim Exemption
+  Emergency motion to claim exemption
 subquestion: |
-  Welcome to Illinois Legal Aid Online's **Emergency Motion to Claim Exemption** Easy Form.
+  Welcome to Illinois Legal Aid Online's **Emergency motion to claim exemption** Easy Form.
 
-  This program helps you make forms to ask the judge for access to the money in your bank account as soon as possible.
-
-  An *Emergency Motion to Claim Exemption* will ask the court to tell your bank to unfreeze your account for an emergency purpose. An emergency purpose can include paying for necessities like food, rent, or utilities.
+  This program helps you make an *Emergency Motion to Claim Exemption*. You can use it to ask the court to tell your bank to unfreeze your account for an emergency purpose. An emergency purpose can include paying for necessities like food, rent, or utilities.
 
   To learn more, read ILAO's article about [**collecting from wages and bank accounts**](https://www.illinoislegalaid.org/legal-information/money-and-property-debtors-can-protect-collection-agent).
 field: sees_nav_bar
@@ -172,14 +171,14 @@ continue button field: how_to_use
 question: |
   Instructions
 subquestion: |
-  To use this program you will need: 
+  To use this program you will need to know the: 
 
   * Source of funds in your bank account,
   * Name and address of the bank that has your account,
   * Name and address of the judgment creditor or creditor's lawyer, and
   * Case number and filing County.
 
-  Set aside 10 to 20 minutes to finish this program. You can log in and save your work to return to later. 
+  Set aside 10 to 20 minutes to finish this program. You can log in and save your work to continue later. 
  
   ${ collapse_template(help_example) }  
 
@@ -196,19 +195,19 @@ continue button field: about_motion
 question: |
   About the motion
 subquestion: |
-  You can file an *Emergency Motion to Claim Exemption* to get access to money in your bank account for an emergency purpose.
+  If a bank has frozen your account, you can file an *Emergency Motion to Claim Exemption*. This will ask the court to unfreeze your money for an emergency purpose. An emergency purpose could be paying for necessities like food, rent, or utilities.
 
-  An emergency purpose could be a need to pay for basic necessities like food, rent, utilities, or others.
-
-  You do this by claiming the money is protected by law ("exempt") in your Motion. To learn more about collection proof income and property, read ILAO's article, [**Collecting from wages and bank accounts basics**](https://www.illinoislegalaid.org/node/31936).
+  The Motion will explain why your money is protected ("exempt") from collection. **Note:** There are limits to what money can be protected.
 
   ${collapse_template(exempt_money)}
+  
+  To learn more about collection proof income and property, read ILAO's article, [**Collecting from wages and bank accounts basics**](https://www.illinoislegalaid.org/node/31936).
 ---
 template: exempt_money
 subject: |
-  **Exempt types of money**
+  **Is all the money in my bank account exempt?**
 content: |
-  The following money is exempt:
+  It depends on where the money came from. Money from the following sources is exempt:
 
   * Social Security, SSI benefits and disability,
   * Pension and retirement benefits and refunds,
@@ -222,9 +221,9 @@ content: |
 ---
 id: money judgment
 question: |
-  Do you have a money judgment against you?
+  Do you have a copy of the money judgment court order against you?
 subquestion: |
-  If you have gotten a copy of the court order saying that you are ordered to pay a creditor, this is a money judgment. This will have information about which court the judgment is from and the case number.
+  If you have a copy of the court order saying that you are ordered to pay a creditor, this is a money judgment. This will have information about which court the judgment is from and the case number.
 fields:
   - no label: money_judgment
     datatype: yesnoradio
@@ -234,7 +233,7 @@ event: no_judgment_kickout
 question: |
   Sorry
 subquestion: |
-  You must have a money judgment against you to use this program.
+  You need a copy of the money judgment against you to use this program. Read ILAO's article about [how to get copies of your court records](https://www.illinoislegalaid.org/node/33186) to find a copy of the judgment.
 
   If you made a mistake, you can click the **Back** button or **Restart** the interview.
 buttons:
@@ -276,6 +275,8 @@ question: |
 subquestion: |
   You cannot use this program if your bank account was frozen because you did not pay child support.
 
+  A judgment for unpaid child support must be paid. If you do not pay it on your own, money in your bank account can be used to pay for it. If you want to change or end your child support payments, read ILAO's article on [**Starting a case to change child support payments**](https://www.illinoislegalaid.org/legal-information/starting-case-change-child-support-payments).
+
   If you made a mistake, you can click the **Back** button or **Restart** the interview.
 buttons:
   - Exit: exit
@@ -307,6 +308,7 @@ subquestion: |
   Enter the name and address of the bank with your frozen account.
 fields:
   - Bank name: bank.name.first
+    maxlength: 60
   - Street address: bank.address.address
     address autocomplete: True
   - Address line 2: bank.address.unit
@@ -325,7 +327,7 @@ subquestion: |
 fields:
   - Source: money_source
     datatype: checkboxes
-    none of the above: False
+    none of the above: True
     choices:
       - Social Security, SSI or disability benefits: social
       - Pension and retirement benefits and refunds: retire
@@ -335,31 +337,42 @@ fields:
       - Workers' compensation benefits: workers
       - Veterans' benefits: veterans
       - Circuit breaker property tax relief benefits: circuit
-      - Other sources: other
-  - How much money in the account came from other sources?: other_amount
-    datatype: currency
-    show if: money_source['other']
 ---
-id: source kickout
-event: source_kickout
+id: source note
+continue button field: source_note
 question: |
-  Sorry
+  % if money_source.all_false():
+  You can claim up to $4,000 as exempt.
+  % else:
+  About the exempt money
+  % endif
 subquestion: |
-  You cannot use this program if more than $4,000 of the money in your account did not come from a qualifying source.
-
-  If you made a mistake, you can click the **Back** button or **Restart** the interview.
-buttons:
-  - Exit: exit
-  - Restart: restart
+  % if money_source.all_false():
+  Since none of the money in your account comes from a qualified source, you can only ask the court to unfreeze up to $4,000.
+  % else:
+  You can can ask the court to unfreeze the money in your account that came from a qualified source, plus an additional $4,000 from any other source.
+  % endif
 ---
 id: account amount
 question: |
-  How much is in your frozen account?
+  How much money are you claiming as exempt?
 subquestion: |
+  % if money_source.all_false():
+  You can claim up to $4,000.
+  % else:
+  You can claim all the money that came from qualified sources. You can also claim up to $4,000 regardless of where it came from.
+  
   ${collapse_template(type_reminder)}
+  % endif
+
+  You should not claim more money than is in your frozen bank account.
 fields:
   - Amount: account_amount
     datatype: currency
+    max: |
+      % if money_source.all_false():
+      4000
+      % endif
 ---
 template: type_reminder
 subject: |
@@ -428,6 +441,18 @@ subject: |
 content: |
   If the person has a long name like "Jane Smith, Director of Housing," select **Business or organization**. You can then enter the full name and title.
 ---
+id: user name
+sets:
+    - users[0].name.first
+    - users[0].name.last
+    - users[0].name.middle
+    - users[0].name.suffix
+question:  |
+  What is your name?
+fields:
+  - code: |
+      users[0].name_fields()
+---
 id: any other users
 question: |
     Was anyone else on your side of the case?
@@ -488,6 +513,7 @@ subquestion: |
   The case number is in the caption near the top of the first page of the court forms.
 fields:
   - Case number: case_number
+    maxlength: 20
 ---
 id: county
 continue button field: county
@@ -722,9 +748,9 @@ content: |
 id: after filing
 continue button field: after_filing
 question: |
-  After filing
+  Adding info about the hearing to your forms
 subquestion: |
-  When you file your motion, court clerk will give you a:
+  When you file your motion, the court clerk will give you a:
 
   * Hearing date,
   * Hearing time, and
@@ -740,7 +766,11 @@ subquestion: |
   
   If the clerk gives you the hearing date after you file your *Emergency Motion to Claim Exemption* with the court, you can add it to your form later.
 
-  You must add this information to the citation before you deliver it to ${other_parties[0].name_full()}.
+  % if other_parties[0].is_represented:
+  You must add this information to the citation before you deliver it to ${other_parties[0].lawyer.name_full()} and ${bank.name.first}.
+  % else:
+  You must add this information to the citation before you deliver it to ${other_parties[0].name_full()} and ${bank.name.first}.
+  % endif
 fields:
   - "Know court date and time?": has_court_date
     datatype: yesnoradio
@@ -751,7 +781,11 @@ question: |
 subquestion: |
   Enter the date, time, and courtroom information for your hearing.
 
-  If you do not know this yet, you can leave these fields blank. You must add this information to the notice before you deliver it to ${other_parties[0].name_full()}.
+  % if other_parties[0].is_represented:
+  If you do not know this yet, you can leave these fields blank. You must add this information to the notice before you deliver it to ${other_parties[0].lawyer.name_full()} and ${bank.name.first}.
+  % else:
+  If you do not know this yet, you can leave these fields blank. You must add this information to the notice before you deliver it to ${other_parties[0].name_full()} and ${bank.name.first}.
+  % endif
 fields:
   - Date: hearing_date
     datatype: date
@@ -760,22 +794,9 @@ fields:
   - Time: hearing_time
     datatype: time
     required: False
-  - Hearing type: hearing_type
-    input type: radio
-    required: False
-    choices:
-      - In person: person
-      - By phone or video: remote
   - Courtroom: courtroom
     maxlength: 10
     required: False
-    js show if:
-     val('hearing_type') === "person"
-  - Instructions for attending by phone or video: remote_instructions
-    required: False
-    input type: area
-    js show if:
-      val('hearing_type') === "remote"
 ---
 id: about notice
 continue button field: about_notice
@@ -785,30 +806,6 @@ subquestion: |
   The creditor and bank must receive notice of your Emergency Motion to Claim Exemption. You cannot have a court hearing unless this notice is given.
 
   Hand-delivering or emailing these forms to your creditor and your bank may be faster, which could mean your money would be unfrozen sooner.
----
-id: users delivery party address
-sets:
-  - users[i].address.address
-  - users[i].address.city
-  - users[i].address.zip
-generic object: ALIndividual
-question: |
-  % if users[i].is_represented:
-  What is ${ users[i].lawyer.name_full() }'s address?
-  % else:
-  What is ${ users[i].name_full() }'s address?
-  % endif
-fields:
-  - Street address: users[i].address.address
-    address autocomplete: True
-  - Address line 2: users[i].address.unit
-    required: False
-  - City: users[i].address.city
-  - State: users[i].address.state
-    code: |
-      states_list()
-    default: IL      
-  - ZIP code: users[i].address.zip
 ---
 id: user address
 question: |
@@ -839,7 +836,7 @@ choices:
 id: add lawyer
 generic object: ALIndividual
 question: |
-  Who is ${ x.full_name() }'s lawyer?
+  Who is ${ x.name_full() }'s lawyer?
 fields:
   - First name: x.lawyer.name.first
   - Middle name: x.lawyer.name.middle
@@ -849,6 +846,25 @@ fields:
     code: |
       name_suffix()
     required: False   
+---
+id: creditor address
+question: |
+  % if other_parties[0].is_represented:
+  What is ${ other_parties[0].lawyer.name_full() }'s address?
+  % else:
+  What is ${ other_parties[0].name_full() }'s address?
+  % endif
+fields:
+  - Street address: other_parties[0].address.address
+    address autocomplete: True
+  - Address line 2: other_parties[0].address.unit
+    required: False
+  - City: other_parties[0].address.city
+  - State: other_parties[0].address.state
+    code: |
+      states_list()
+    default: IL      
+  - ZIP code: other_parties[0].address.zip
 ---
 id: knows delivery method
 generic object: ALIndividual
@@ -919,12 +935,17 @@ fields:
     required: False
   - US mail: x.mail_delivery
     datatype: yesnowide                                                   
-  - Address or intersection of post office or mailbox: x.mail.address
+  - Address of post office or mailbox: x.mail.address
     address autocomplete: False
     show if: 
       variable: x.mail_delivery
       is: True
     required: False
+  - Address line 2: x.mail.unit
+    required: False
+    show if:
+      variable: x.mail_delivery
+      is: True
   - City: x.mail.city
     show if: 
       variable: x.mail_delivery
@@ -937,59 +958,45 @@ fields:
       variable: x.mail_delivery
       is: True
     required: False
+  - Zip code: x.mail.zip
+    required: False
+    show if: 
+      variable: x.mail_delivery
+      is: True
   - Delivery company (like UPS or FedEx): x.by_third_party
     datatype: yesnowide
-  - Address or intersection of delivery company: x.carrier.address
+  - Address of delivery company: x.carrier.address
     address autocomplete: False
     show if: 
       variable: x.by_third_party
       is: True
     required: False
-  - City of third-party carrier: x.carrier.city
+  - Address line 2: x.carrier.unit
+    required: False
+    show if:
+      variable: x.by_third_party
+      is: True
+  - City: x.carrier.city
     show if: 
       variable: x.by_third_party
       is: True
     required: False
-  - State of third-party carrier: x.carrier.state
+  - State: x.carrier.state
     code: |
       states_list()    
     show if: 
       variable: x.by_third_party
       is: True
     required: False
+  - Zip code: x.carrier.zip
+    required: False
+    show if: 
+      variable: x.by_third_party
+      is: True
   - Hand delivery: x.hand_delivery
     datatype: yesnowide
     help: |
       You can only deliver to the party, the party's family member over 13 at their residence, the party's lawyer, or their lawyer's office.
-  - Street address: x.hand_delivery_address.address
-    address autocomplete: True
-    show if: 
-      variable: x.hand_delivery
-      is: True
-    required: False
-  - Address line 2: x.hand_delivery_address.unit
-    show if: 
-      variable: x.hand_delivery
-      is: True
-    required: False
-  - City: x.hand_delivery_address.city
-    show if: 
-      variable: x.hand_delivery
-      is: True
-    required: False
-  - State: x.hand_delivery_address.state
-    code: |
-      states_list()
-    default: IL      
-    show if: 
-      variable: x.hand_delivery
-      is: True
-    required: False
-  - ZIP code: x.hand_delivery_address.zip
-    show if: 
-      variable: x.hand_delivery
-      is: True
-    required: False
   - By mail from a prison or jail: x.jail_delivery
     datatype: yesnowide
   - Name of prison or jail: x.delivery_jail_name
@@ -1139,7 +1146,7 @@ subquestion: |
     <p>By signing your court forms you are certifying that:</p>
     <p><ul>
       <li>Everything on the forms is true and correct, and</li>
-      <li>You understand that making a false statement on the form is perjury, which can result in criminal penalties.</li>
+      <li>You understand that making a false statement on the forms is perjury, which can result in criminal penalties.</li>
     </ul></p>
   <p>See the <a href="https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm"><b>Code of Civil Procedure, 735 ILCS 5/1-109</b></a> for more information.</p>
   </div>
@@ -1166,7 +1173,7 @@ event: get_docs_screen
 question: |
   Download
 subquestion: |   
-  Your forms are ready. View and download your forms below. Click **Make changes** to fix any mistakes.
+  Your forms are ready. View and download your forms below. Click **:edit: Make changes** to fix any mistakes.
 
   This program **does not file** your forms with the court or deliver them to other parties in your case. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/information-for-filers-without-lawyers).
 
@@ -1345,43 +1352,11 @@ attachment:
     - "other_party_email": ${other_parties[0].delivery_email}
     - "other_party_post_office": |
         % if other_parties[0].knows_delivery_method and other_parties[0].mail_delivery:
-        % if other_parties[0].mail.address != "" and other_parties[0].mail.city != "" and other_parties[0].mail.state != "":
-        ${other_parties[0].mail.address }, ${other_parties[0].mail.city}, ${ state_name(other_parties[0].mail.state) }
-        % elif other_parties[0].mail.address != "" and other_parties[0].mail.city != "":
-        ${other_parties[0].mail.address }, ${other_parties[0].mail.city}
-        % elif other_parties[0].mail.address != "" and other_parties[0].mail.state != "":
-        ${other_parties[0].mail.address }, ${ state_name(other_parties[0].mail.state) }
-        % elif other_parties[0].mail.city != "" and other_parties[0].mail.state != "":
-        ${other_parties[0].mail.city}, ${ state_name(other_parties[0].mail.state) }
-        % elif other_parties[0].mail.address != "":
-        ${other_parties[0].mail.address}
-        % elif other_parties[0].mail.city != "":
-        ${other_parties[0].mail.state}
-        % else:
-        ${state_name(other_parties[0].mail.state)}
-        % endif
-        % else:
-        ${ "" }
+        ${other_parties[0].mail.on_one_line(bare=True)}  
         % endif
     - "other_party_carrier_address": |
         % if other_parties[0].knows_delivery_method and other_parties[0].by_third_party:
-        % if other_parties[0].carrier.address != "" and other_parties[0].carrier.city != "" and other_parties[0].carrier.state != "":
-        ${other_parties[0].carrier.address }, ${other_parties[0].carrier.city}, ${ state_name(other_parties[0].carrier.state) }
-        % elif other_parties[0].carrier.address != "" and other_parties[0].carrier.city != "":
-        ${other_parties[0].carrier.address }, ${other_parties[0].carrier.city}
-        % elif other_parties[0].carrier.address != "" and other_parties[0].carrier.state != "":
-        ${other_parties[0].carrier.address }, ${ state_name(other_parties[0].carrier.state) }
-        % elif other_parties[0].carrier.city != "" and other_parties[0].carrier.state != "":
-        ${other_parties[0].carrier.city}, ${ state_name(other_parties[0].carrier.state) }
-        % elif other_parties[0].carrier.address != "":
-        ${other_parties[0].carrier.address}
-        % elif other_parties[0].carrier.city != "":
-        ${other_parties[0].carrier.state}
-        % else:
-        ${state_name(other_parties[0].carrier.state)}
-        % endif
-        % else:
-        ${ "" }
+        ${other_parties[0].carrier.on_one_line(bare=True)}
         % endif
     - "other_party_jail_name": ${other_parties[0].delivery_jail_name if other_parties[0].jail_delivery and other_parties[0].knows_delivery_method else ""}
     - "other_party_delivery_date": ${other_parties[0].delivery_date if other_parties[0].knows_delivery_method else ""}
@@ -1408,43 +1383,11 @@ attachment:
     - "bank_email": ${bank.delivery_email}
     - "bank_post_address": |
         % if bank.knows_delivery_method and bank.mail_delivery:
-        % if bank.mail.address != "" and bank.mail.city != "" and bank.mail.state != "":
-        ${bank.mail.address }, ${bank.mail.city}, ${ state_name(bank.mail.state) }
-        % elif bank.mail.address != "" and bank.mail.city != "":
-        ${bank.mail.address }, ${bank.mail.city}
-        % elif bank.mail.address != "" and bank.mail.state != "":
-        ${bank.mail.address }, ${ state_name(bank.mail.state) }
-        % elif bank.mail.city != "" and bank.mail.state != "":
-        ${bank.mail.city}, ${ state_name(bank.mail.state) }
-        % elif bank.mail.address != "":
-        ${bank.mail.address}
-        % elif bank.mail.city != "":
-        ${bank.mail.state}
-        % else:
-        ${state_name(bank.mail.state)}
-        % endif
-        % else:
-        ${ "" }
+        ${bank.mail.on_one_line(bare=True)}
         % endif
     - "bank_carrier_address": |
         % if bank.knows_delivery_method and bank.by_third_party:
-        % if bank.carrier.address != "" and bank.carrier.city != "" and bank.carrier.state != "":
-        ${bank.carrier.address }, ${bank.carrier.city}, ${ state_name(bank.carrier.state) }
-        % elif bank.carrier.address != "" and bank.carrier.city != "":
-        ${bank.carrier.address }, ${bank.carrier.city}
-        % elif bank.carrier.address != "" and bank.carrier.state != "":
-        ${bank.carrier.address }, ${ state_name(bank.carrier.state) }
-        % elif bank.carrier.city != "" and bank.carrier.state != "":
-        ${bank.carrier.city}, ${ state_name(bank.carrier.state) }
-        % elif bank.carrier.address != "":
-        ${bank.carrier.address}
-        % elif bank.carrier.city != "":
-        ${bank.carrier.state}
-        % else:
-        ${state_name(bank.carrier.state)}
-        % endif
-        % else:
-        ${ "" }
+        ${bank.carrier.on_one_line(bare=True)}
         % endif
     - "bank_prison_name": ${bank.delivery_jail_name if bank.jail_delivery and bank.knows_delivery_method else ""}
     - "bank_delivery_date": ${bank.delivery_date if bank.knows_delivery_method else ""}
@@ -1519,14 +1462,14 @@ question: |
 subquestion: |
   Edit your answers below.
 review:
-  - Edit: money_judgment
-    button: |
-      **Do you have a money judgment against you?**
-      ${word(yesno(money_judgment))}
   - Edit: frozen_account
     button: |
       **Has your bank account been frozen?**
       ${word(yesno(frozen_account))}
+  - Edit: money_judgment
+    button: |
+      **Do you have a money judgment against you?**
+      ${word(yesno(money_judgment))}
   - Edit: child_support
     button: |
       **Was your account frozen because you did not pay child support?**
@@ -1617,7 +1560,7 @@ review:
   - Edit: 
     - trial_court_index
     - recompute:
-        - trial_court
+        - court_county
     button: |
       **County where this case was filed:**
       ${court_county}
@@ -1858,14 +1801,14 @@ subquestion: |
 review:
   - note: |
       <h4>Qualifying</h4>
-  - Edit: money_judgment
-    button: |
-      **Do you have a money judgment against you?**
-      ${word(yesno(money_judgment))}
   - Edit: frozen_account
     button: |
       **Has your bank account been frozen?**
       ${word(yesno(frozen_account))}
+  - Edit: money_judgment
+    button: |
+      **Do you have a money judgment against you?**
+      ${word(yesno(money_judgment))}  
   - Edit: child_support
     button: |
       **Was your account frozen because you did not pay child support?**
@@ -1942,7 +1885,7 @@ review:
   - Edit: 
     - trial_court_index
     - recompute:
-        - trial_court
+        - court_county
     button: |
       **County where this case was filed:**
       ${court_county}
