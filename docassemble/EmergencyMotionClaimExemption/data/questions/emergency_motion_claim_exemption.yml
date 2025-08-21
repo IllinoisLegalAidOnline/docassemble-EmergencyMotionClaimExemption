@@ -176,7 +176,7 @@ subquestion: |
   * Source of funds in your bank account,
   * Name and address of the bank that has your account,
   * Name and address of the judgment creditor or creditor's lawyer, and
-  * Case number and filing County.
+  * Case number and filing county.
 
   Set aside 10 to 20 minutes to finish this program. You can log in and save your work to continue later. 
  
@@ -275,7 +275,9 @@ question: |
 subquestion: |
   You cannot use this program if your bank account was frozen because you did not pay child support.
 
-  A judgment for unpaid child support must be paid. If you do not pay it on your own, money in your bank account can be used to pay for it. If you want to change or end your child support payments, read ILAO's article on [**Starting a case to change child support payments**](https://www.illinoislegalaid.org/legal-information/starting-case-change-child-support-payments).
+  A judgment for unpaid child support must be paid. If you do not pay it on your own, money in your bank account can be used to pay for it. 
+  
+  If you want to change or end ongoing child support payments, read ILAO's article on [**Starting a case to change child support payments**](https://www.illinoislegalaid.org/legal-information/starting-case-change-child-support-payments).
 
   If you made a mistake, you can click the **Back** button or **Restart** the interview.
 buttons:
@@ -341,14 +343,10 @@ fields:
 id: source note
 continue button field: source_note
 question: |
-  % if money_source.all_false():
-  You can claim up to $4,000 as exempt.
-  % else:
   About the exempt money
-  % endif
 subquestion: |
   % if money_source.all_false():
-  Since none of the money in your account comes from a qualified source, you can only ask the court to unfreeze up to $4,000.
+  Since none of the money in your account comes from a qualified source, you can only ask the court to unfreeze **up to $4,000**.
   % else:
   You can can ask the court to unfreeze the money in your account that came from a qualified source, plus an additional $4,000 from any other source.
   % endif
@@ -361,10 +359,10 @@ subquestion: |
   You can claim up to $4,000.
   % else:
   You can claim all the money that came from qualified sources. You can also claim up to $4,000 regardless of where it came from.
-  
-  ${collapse_template(type_reminder)}
   % endif
 
+  ${collapse_template(type_reminder)}
+  
   You should not claim more money than is in your frozen bank account.
 fields:
   - Amount: account_amount
@@ -373,6 +371,13 @@ fields:
       % if money_source.all_false():
       4000
       % endif
+  - Does any of this money come from a non-exempt source?: some_wildcard
+    datatype: yesnoradio
+    show if: 
+      code: |
+        money_source.any_true()
+    #js show if:
+    #  val("money_source.any_true()") === true
 ---
 template: type_reminder
 subject: |
@@ -874,10 +879,10 @@ question: |
   % else:
   Do you know **how** and **when** you will send your forms to ${ x.name.full(middle="full") }?
   % endif
-subquestion: |
-  ${ collapse_template(delivery_method_help) }  
-  
+subquestion: | 
   The Proof of Delivery section is where you explain how you will send a copy of your forms to your creditor and your bank.
+
+  ${ collapse_template(delivery_method_help) } 
 
   For best results, complete the Proof of Delivery section and send the forms today.
 
@@ -936,7 +941,7 @@ fields:
   - US mail: x.mail_delivery
     datatype: yesnowide                                                   
   - Address of post office or mailbox: x.mail.address
-    address autocomplete: False
+    address autocomplete: True
     show if: 
       variable: x.mail_delivery
       is: True
@@ -958,7 +963,7 @@ fields:
       variable: x.mail_delivery
       is: True
     required: False
-  - Zip code: x.mail.zip
+  - ZIP code: x.mail.zip
     required: False
     show if: 
       variable: x.mail_delivery
@@ -966,7 +971,7 @@ fields:
   - Delivery company (like UPS or FedEx): x.by_third_party
     datatype: yesnowide
   - Address of delivery company: x.carrier.address
-    address autocomplete: False
+    address autocomplete: True
     show if: 
       variable: x.by_third_party
       is: True
@@ -988,7 +993,7 @@ fields:
       variable: x.by_third_party
       is: True
     required: False
-  - Zip code: x.carrier.zip
+  - ZIP code: x.carrier.zip
     required: False
     show if: 
       variable: x.by_third_party
@@ -1281,7 +1286,7 @@ attachment:
     - "workers_comp": ${money_source['workers']}
     - "vet_benefits": ${money_source['veterans']}
     - "circuit_breaker": ${money_source['circuit']}
-    - "other_source": ${money_source['other']}
+    - "other_source": ${True if money_source.all_false() or some_wildcard else False}
     - "account_amount": ${currency(account_amount, symbol=u'')}
     - "e_signature": ${users[0].name_full() if e_signature else ""}
     - "user_name": ${users[0].name_full()}
@@ -1519,7 +1524,7 @@ review:
       % if money_source['circuit']:
       * Circuit breaker property tax relief benefits
       % endif
-      % if money_source['other']:
+      % if money_source.all_false():
       * Other sources
       % endif
   - Edit: account_amount
@@ -1851,7 +1856,7 @@ review:
       % if money_source['circuit']:
       * Circuit breaker property tax relief benefits
       % endif
-      % if money_source['other']:
+      % if money_source.all_false():
       * Other sources
       % endif
   - Edit: account_amount
