@@ -277,7 +277,7 @@ subquestion: |
 
   A judgment for unpaid child support must be paid. If you do not pay it on your own, money in your bank account can be used to pay for it. 
   
-  If you want to change or end ongoing child support payments, read ILAO's article on [**Starting a case to change child support payments**](https://www.illinoislegalaid.org/legal-information/starting-case-change-child-support-payments).
+  If you want to change or end ongoing child support payments, read ILAO's article on [**changing or ending child support payment**](https://www.illinoislegalaid.org/node/183971).
 
   If you made a mistake, you can click the **Back** button or **Restart** the interview.
 buttons:
@@ -329,7 +329,7 @@ subquestion: |
 fields:
   - Source: money_source
     datatype: checkboxes
-    none of the above: True
+    none of the above: False
     choices:
       - Social Security, SSI or disability benefits: social
       - Pension and retirement benefits and refunds: retire
@@ -339,13 +339,28 @@ fields:
       - Workers' compensation benefits: workers
       - Veterans' benefits: veterans
       - Circuit breaker property tax relief benefits: circuit
+      - Other sources: other
+        help: |
+          You should check this box if any money in the account does not come from the sources listed above.
+
+          Other sources can include:
+
+          * Employment income,
+          * Money you inherited,
+          * Money you got as a gift, and
+          * Money you got from selling your possessions.
+validation code: |
+  if money_source['other'] and not money_source['social'] and not money_source['retire'] and not money_source['public'] and not money_source['child'] and not money_source['unemployment'] and not money_source['workers'] and not money_source['veterans'] and not money_source['circuit']:
+    other_only = True
+  else:
+    other_only = False
 ---
 id: source note
 continue button field: source_note
 question: |
   About the exempt money
 subquestion: |
-  % if money_source.all_false():
+  % if other_only:
   Since none of the money in your account comes from a qualified source, you can only ask the court to unfreeze **up to $4,000**.
   % else:
   You can can ask the court to unfreeze the money in your account that came from a qualified source, plus an additional $4,000 from any other source.
@@ -355,7 +370,7 @@ id: account amount
 question: |
   How much money are you claiming as exempt?
 subquestion: |
-  % if money_source.all_false():
+  % if other_only:
   You can claim up to $4,000.
   % else:
   You can claim all the money that came from qualified sources. You can also claim up to $4,000 regardless of where it came from.
@@ -368,16 +383,9 @@ fields:
   - Amount: account_amount
     datatype: currency
     max: |
-      % if money_source.all_false():
+      % if other_only:
       4000
       % endif
-  - Does any of this money come from a non-exempt source?: some_wildcard
-    datatype: yesnoradio
-    show if: 
-      code: |
-        money_source.any_true()
-    #js show if:
-    #  val("money_source.any_true()") === true
 ---
 template: type_reminder
 subject: |
@@ -772,9 +780,9 @@ subquestion: |
   If the clerk gives you the hearing date after you file your *Emergency Motion to Claim Exemption* with the court, you can add it to your form later.
 
   % if other_parties[0].is_represented:
-  You must add this information to the citation before you deliver it to ${other_parties[0].lawyer.name_full()} and ${bank.name.first}.
+  **Important:** You must add this information to the citation before you deliver it to ${other_parties[0].lawyer.name_full()} and ${bank.name.first}.
   % else:
-  You must add this information to the citation before you deliver it to ${other_parties[0].name_full()} and ${bank.name.first}.
+  **Important:** You must add this information to the citation before you deliver it to ${other_parties[0].name_full()} and ${bank.name.first}.
   % endif
 fields:
   - "Know court date and time?": has_court_date
@@ -1286,7 +1294,7 @@ attachment:
     - "workers_comp": ${money_source['workers']}
     - "vet_benefits": ${money_source['veterans']}
     - "circuit_breaker": ${money_source['circuit']}
-    - "other_source": ${True if money_source.all_false() or some_wildcard else False}
+    - "other_source": ${money_source['other']}
     - "account_amount": ${currency(account_amount, symbol=u'')}
     - "e_signature": ${users[0].name_full() if e_signature else ""}
     - "user_name": ${users[0].name_full()}
@@ -1524,7 +1532,7 @@ review:
       % if money_source['circuit']:
       * Circuit breaker property tax relief benefits
       % endif
-      % if money_source.all_false():
+      % if money_source['other']:
       * Other sources
       % endif
   - Edit: account_amount
@@ -1856,7 +1864,7 @@ review:
       % if money_source['circuit']:
       * Circuit breaker property tax relief benefits
       % endif
-      % if money_source.all_false():
+      % if money_source['other']:
       * Other sources
       % endif
   - Edit: account_amount
