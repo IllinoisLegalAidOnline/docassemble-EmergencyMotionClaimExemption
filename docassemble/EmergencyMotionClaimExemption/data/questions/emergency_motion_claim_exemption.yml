@@ -73,7 +73,6 @@ code: |
   set_progress(20)
   bank.name.first
   money_source
-  source_note
   account_amount
 
   nav.set_section('section_case')
@@ -355,23 +354,12 @@ validation code: |
   else:
     other_only = False
 ---
-id: source note
-continue button field: source_note
-question: |
-  About the exempt money
-subquestion: |
-  % if other_only:
-  Since none of the money in your account comes from a qualified source, you can only ask the court to unfreeze **up to $4,000**.
-  % else:
-  You can can ask the court to unfreeze the money in your account that came from a qualified source, plus an additional $4,000 from any other source.
-  % endif
----
 id: account amount
 question: |
   How much money are you claiming as exempt?
 subquestion: |
   % if other_only:
-  You can claim up to $4,000.
+  You can claim **up to $4,000**.
   % else:
   You can claim all the money that came from qualified sources. You can also claim up to $4,000 regardless of where it came from.
   % endif
