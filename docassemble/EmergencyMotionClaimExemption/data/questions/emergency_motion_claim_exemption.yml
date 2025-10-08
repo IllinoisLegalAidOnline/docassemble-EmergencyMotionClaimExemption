@@ -76,6 +76,7 @@ code: |
   account_amount
 
   nav.set_section('section_case')
+  party_label
   other_parties.gather()
   users.gather()
   case_number
@@ -338,6 +339,8 @@ fields:
       - Workers' compensation benefits: workers
       - Veterans' benefits: veterans
       - Circuit breaker property tax relief benefits: circuit
+        help: |
+          You should check this box if your property taxes went up and you got a grant from the Circuit Breaker Property Tax Relief Fund to help you pay your taxes.
       - Other sources: other
         help: |
           You should check this box if any money in the account does not come from the sources listed above.
@@ -359,9 +362,11 @@ question: |
   How much money are you claiming as exempt?
 subquestion: |
   % if other_only:
-  You can claim **up to $4,000**.
+  You can claim **up to $4,000**. This includes any money that was automatically exempted.
   % else:
-  You can claim all the money that came from qualified sources. You can also claim up to $4,000 regardless of where it came from.
+  You can claim all the money that came from qualified sources. 
+  
+  You can also claim up to $4,000 regardless of where it came from. This includes any money that was automatically exempted.
   % endif
 
   ${collapse_template(type_reminder)}
@@ -515,6 +520,9 @@ subquestion: |
 fields:
   - Case number: case_number
     maxlength: 20
+terms:
+  - circuit court clerk: |
+      The **circuit court clerk** takes care of files and documents for the county circuit court.
 ---
 id: county
 continue button field: county
@@ -1221,8 +1229,8 @@ objects:
   - order: ALDocument.using(title="Order on Emergency Motion to Claim Exemption", filename="order.pdf", has_addendum=False)
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, motion, notice, order], filename="vacate_default_foreclosure_judgment.pdf", title="All forms")
-  - al_court_bundle: ALDocumentBundle.using(elements=[instructions, motion, notice, order], filename="vacate_default_foreclosure_judgment.pdf", title="Delay a foreclosure sale")
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, motion, notice, order], filename="emergency_motion_to_claim_exemption.pdf", title="All forms")
+  - al_court_bundle: ALDocumentBundle.using(elements=[instructions, motion, notice, order], filename="emergency_motion_to_claim_exemption.pdf", title="Emergency Motion to Claim Exemption")
 ---
 attachment:
   variable name: instructions[i]
@@ -1518,7 +1526,7 @@ review:
       * Veterans' benefits
       % endif
       % if money_source['circuit']:
-      * Circuit breaker property tax relief benefits
+      * ker property tax relief benefits
       % endif
       % if money_source['other']:
       * Other sources
@@ -1633,9 +1641,25 @@ columns:
   - Name: |
       row_item.name.full(middle="full") if defined("row_item.name.first") else ""
   - Edit: |
-      action_button_html(url_action(row_item.attr_name("review_other_delivery")), label="Edit", icon="pencil-alt")
+      action_button_html(url_action(row_item.attr_name("review_other_party")), label="Edit", icon="pencil-alt")
 delete buttons: True
 confirm: True
+---
+id: other party review screen
+continue button field: x.review_other_party
+section: Case info
+generic object: ALIndividual
+question: |
+  Edit ${ x.name.full(middle="full") }'s information
+review: 
+  - Edit: x.name.first
+    button: |
+      **Name:**
+      ${ x.name.full(middle="full")  }
+  - Edit: x.address.address
+    button: |
+      **Address:**
+      ${x.address.on_one_line(bare=True)}
 ---
 id: user party review screen
 continue button field: x.review_user
