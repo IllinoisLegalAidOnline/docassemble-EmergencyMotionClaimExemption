@@ -362,11 +362,9 @@ question: |
   How much money are you claiming as exempt?
 subquestion: |
   % if other_only:
-  You can claim **up to $4,000**. This includes any money that was automatically exempted.
+  You can claim **up to $4,000**.
   % else:
-  You can claim all the money that came from qualified sources. 
-  
-  You can also claim up to $4,000 regardless of where it came from. This includes any money that was automatically exempted.
+  You can claim all the money that came from qualified sources. You can also claim up to $4,000 regardless of where it came from.
   % endif
 
   ${collapse_template(type_reminder)}
