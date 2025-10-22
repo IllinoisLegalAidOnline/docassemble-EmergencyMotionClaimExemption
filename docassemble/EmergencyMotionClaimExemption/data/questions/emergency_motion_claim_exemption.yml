@@ -382,7 +382,7 @@ template: type_reminder
 subject: |
   **Remind me what income sources can be unfrozen**
 content: |
-  * Social Security, SSI or disability benefits,
+  * Social Security, SSI, or disability benefits,
   * Pension and retirement benefits and refunds,
   * Public assistance benefits,
   * Child support,
