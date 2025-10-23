@@ -66,12 +66,14 @@ code: |
     no_judgment_kickout
   if child_support:
     child_support_kickout
-  if unpaid_taxes:
-    taxes_kickout
+  #if unpaid_taxes:
+  #  taxes_kickout
 
   nav.set_section('section_account')
   set_progress(20)
   bank.name.first
+  if creditor_type != "private":
+    government_note
   money_source
   account_amount
 
@@ -332,12 +334,15 @@ fields:
     none of the above: False
     choices:
       - Social Security, SSI or disability benefits: social
+        show if: creditor_type != "federal"
       - Pension and retirement benefits and refunds: retire
       - Public assistance benefits: public
+        show if: creditor_type == "private"
       - Child support: child
       - Unemployment compensation benefits: unemployment
       - Workers' compensation benefits: workers
       - Veterans' benefits: veterans
+        show if: creditor_type != "federal"
       - Circuit breaker property tax relief benefits: circuit
         help: |
           You should check this box if your property taxes went up and you got a grant from the Circuit Breaker Property Tax Relief Fund to help you pay your taxes.
@@ -392,6 +397,30 @@ content: |
   * Circuit breaker property tax relief benefits, and
   * Any other source, up to $4,000.
 ---
+id: creditor type
+question: |
+  Did the government freeze your bank account?
+fields:
+  - no label: creditor_type
+    input type: radio
+    choices:
+      - Yes, the federal government did.: federal
+      - Yes, the state government did.: state
+      - No, my creditor is not the government.: private
+---
+id: government note
+continue button field: government_note
+question: |
+  About government creditors
+subquestion: |
+  % if creditor_type == "federal":
+  The federal government is able to garnish income from sources that private creditors can not. These sources include Social Security payments, veterans' benefits, and federal employee benefits.
+  % elif creditor_type == "state":
+  A state government may be able to garnish income from sources that private creditors can not.
+  % endif
+
+  You can still use this prgogram, but you may want to talk with a lawyer to discuss your options. Use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
+---
 sets:
   - other_parties[i].name.first
 id: other parties name
@@ -402,7 +431,7 @@ question: |
   What is the ${ordinal(i)} ${opposing_party}'s name?
   % endif
 subquestion: |
-  % if i == 0:
+  % if i == 0 and creditor_type == "private":
   The creditor is the person or company that has the money judgment against you.
 
   If this is a person, enter their name exactly as it appears on the money judgment or citation.
@@ -1498,6 +1527,16 @@ review:
     button: |
       **Your bank's name:**
       ${bank.name_full()}
+  - Edit: creditor_type
+    button: |
+      **Who froze your account?**
+      % if creditor_type == "federal":
+      The federal government
+      % elif creditor_type  == "state":
+      The state government
+      % else:
+      A private creditor
+      % endif
   - Edit: money_source
     button: |
       **Source of money in account:**
@@ -1542,6 +1581,10 @@ question: |
 subquestion: |
   Edit your answers below.
 review:
+  - Edit: party_label
+    button: |
+      **Your role:**
+      ${capitalize(party_label)}  
   - Edit: users.revisit
     button: |
       **Your party:**
@@ -1846,6 +1889,16 @@ review:
     button: |
       **Your bank's name:**
       ${bank.name_full()}
+  - Edit: creditor_type
+    button: |
+      **Who froze your account?**
+      % if creditor_type == "federal":
+      The federal government
+      % elif creditor_type  == "state":
+      The state government
+      % else:
+      A private creditor
+      % endif
   - Edit: money_source
     button: |
       **Source of money in account:**
@@ -1883,6 +1936,10 @@ review:
       ${currency(account_amount)}
   - note: |
       <h4>Case Details</h4>
+  - Edit: party_label
+    button: |
+      **Your role:**
+      ${capitalize(party_label)}  
   - Edit: users.revisit
     button: |
       **Your party:**
