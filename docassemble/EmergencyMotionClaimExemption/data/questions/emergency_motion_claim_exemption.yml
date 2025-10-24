@@ -72,8 +72,6 @@ code: |
   nav.set_section('section_account')
   set_progress(20)
   bank.name.first
-  if creditor_type != "private":
-    government_note
   money_source
   account_amount
 
@@ -110,6 +108,7 @@ code: |
   users[0].address.address
   users[0].has_email_address
   e_signature
+  automatic_exemption
 
   nav.set_section('section_download')
   forms_assembling
@@ -323,10 +322,26 @@ fields:
       states_list()   
   - ZIP code: bank.address.zip
 ---
+template: govt_creditor_note
+subject: |
+  **About government creditors**
+content: |
+  If your creditor is the government, they may be able to freeze money from sources that would normally be exempt.
+
+  The federal government is able to garnish income from Social Security payments, veterans' benefits, and federal employee benefits. A state government can garnish income that came from state benefits. City or county governments may also be able to garnish these income sources.
+
+  If the government has frozen your bank account, you may want to talk with a lawyer to discuss your options. Use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
+---
 id: money source
 question: |
   What is the source of the money in your frozen bank account?
 subquestion: |
+  Money from the sources listed below is exempt from being frozen. 
+  
+  You are also able to claim up to $4,000 as exempt no matter where it came from. This is called as a "wildcard exemption." Click **Other sources** if you would like to use the wildcard exemption.
+
+  ${collapse_template(govt_creditor_note)}
+  
   Click all that apply.
 fields:
   - Source: money_source
@@ -334,15 +349,12 @@ fields:
     none of the above: False
     choices:
       - Social Security, SSI or disability benefits: social
-        show if: creditor_type != "federal"
       - Pension and retirement benefits and refunds: retire
       - Public assistance benefits: public
-        show if: creditor_type == "private"
       - Child support: child
       - Unemployment compensation benefits: unemployment
       - Workers' compensation benefits: workers
       - Veterans' benefits: veterans
-        show if: creditor_type != "federal"
       - Circuit breaker property tax relief benefits: circuit
         help: |
           You should check this box if your property taxes went up and you got a grant from the Circuit Breaker Property Tax Relief Fund to help you pay your taxes.
@@ -394,32 +406,42 @@ content: |
   * Unemployment compensation benefits,
   * Workers' compensation benefits,
   * Veterans' benefits,
-  * Circuit breaker property tax relief benefits, and
+  * Circuit breaker property tax relief benefits, and  h 
   * Any other source, up to $4,000.
 ---
-id: creditor type
+id: automatic exemption note
+continue button field: automatic_exemption
 question: |
-  Did the government freeze your bank account?
-fields:
-  - no label: creditor_type
-    input type: radio
-    choices:
-      - Yes, the federal government did.: federal
-      - Yes, the state government did.: state
-      - No, my creditor is not the government.: private
+  About consumer debt judgments
+subquestion: |
+  If your bank account was frozen because of a **{consumer debt judgment}**, you may be entitled to a $1,000 automatic exemption. This means the bank would unfreeze $1,000 before the court hears your motion.
+
+  If your bank does not unfreeze $1,000 for you, you may want to talk with a lawyer to discuss your options. Use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
+terms: 
+  - consumer debt judgment: |
+      A **consumer debt judgment** is a judgment from a court case about consumer debt.
+      
+      **Consumer debt** is debt taken out for personal, family, or household purposes. 
+---
+#id: creditor type
+#question: |
+#  Did the government freeze your bank account?
+#fields:
+#  - no label: creditor_type
+#    input type: radio
+#    choices:
+#      - Yes, the federal government did.: federal
+#      - Yes, the state government did.: state
+#      - No, my creditor is not the government.: private
 ---
 id: government note
 continue button field: government_note
 question: |
   About government creditors
 subquestion: |
-  % if creditor_type == "federal":
-  The federal government is able to garnish income from sources that private creditors can not. These sources include Social Security payments, veterans' benefits, and federal employee benefits.
-  % elif creditor_type == "state":
-  A state government may be able to garnish income from sources that private creditors can not.
-  % endif
-
-  You can still use this prgogram, but you may want to talk with a lawyer to discuss your options. Use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
+  The federal government is able to garnish income from sources that private creditors can not. These sources include Social Security payments, veterans' benefits, and federal employee benefits. A state government can garnish income from state benefits.
+  
+  You can still use this program, but you may want to talk with a lawyer to discuss your options. Use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
 ---
 sets:
   - other_parties[i].name.first
@@ -431,8 +453,8 @@ question: |
   What is the ${ordinal(i)} ${opposing_party}'s name?
   % endif
 subquestion: |
-  % if i == 0 and creditor_type == "private":
-  The creditor is the person or company that has the money judgment against you.
+  % if i == 0:
+  The creditor is the person, company, or agency that has the money judgment against you.
 
   If this is a person, enter their name exactly as it appears on the money judgment or citation.
   % endif
@@ -1527,16 +1549,16 @@ review:
     button: |
       **Your bank's name:**
       ${bank.name_full()}
-  - Edit: creditor_type
-    button: |
-      **Who froze your account?**
-      % if creditor_type == "federal":
-      The federal government
-      % elif creditor_type  == "state":
-      The state government
-      % else:
-      A private creditor
-      % endif
+  #- Edit: creditor_type
+  #  button: |
+  #    **Who froze your account?**
+  #    % if creditor_type == "federal":
+  #    The federal government
+  #    % elif creditor_type  == "state":
+  #    The state government
+  #    % else:
+  #    A private creditor
+  #    % endif
   - Edit: money_source
     button: |
       **Source of money in account:**
@@ -1889,16 +1911,16 @@ review:
     button: |
       **Your bank's name:**
       ${bank.name_full()}
-  - Edit: creditor_type
-    button: |
-      **Who froze your account?**
-      % if creditor_type == "federal":
-      The federal government
-      % elif creditor_type  == "state":
-      The state government
-      % else:
-      A private creditor
-      % endif
+  #- Edit: creditor_type
+  #  button: |
+  #    **Who froze your account?**
+  #    % if creditor_type == "federal":
+  #    The federal government
+  #    % elif creditor_type  == "state":
+  #    The state government
+  #    % else:
+  #    A private creditor
+  #    % endif
   - Edit: money_source
     button: |
       **Source of money in account:**
