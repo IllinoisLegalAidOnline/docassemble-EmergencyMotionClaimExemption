@@ -108,7 +108,7 @@ code: |
   users[0].address.address
   users[0].has_email_address
   e_signature
-  automatic_exemption
+  #automatic_exemption
 
   nav.set_section('section_download')
   forms_assembling
@@ -326,9 +326,9 @@ template: govt_creditor_note
 subject: |
   **About government creditors**
 content: |
-  If your creditor is the government, they may be able to freeze money from sources that would normally be exempt.
+  If your creditor is the government, they may be able to collect money from sources that would normally be exempt. They may not need a court order to do so.
 
-  The federal government is able to garnish income from Social Security payments, veterans' benefits, and federal employee benefits. A state government can garnish income that came from state benefits. City or county governments may also be able to garnish these income sources.
+  The federal government is able to garnish money from tax refunds, Social Security payments, veterans' benefits, and federal employee benefits. A state, city, or county government may also be able to collect from tax refunds.
 
   If the government has frozen your bank account, you may want to talk with a lawyer to discuss your options. Use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
 ---
