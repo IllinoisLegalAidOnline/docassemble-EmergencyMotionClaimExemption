@@ -164,7 +164,7 @@ subquestion: |
 
   This program helps you make an *Emergency Motion to Claim Exemption*. You can use it to ask the court to tell your bank to unfreeze your account for an emergency purpose. An emergency purpose can include paying for necessities like food, rent, or utilities.
 
-  To learn more, read ILAO's article about [**collecting from wages and bank accounts**](https://www.illinoislegalaid.org/legal-information/money-and-property-debtors-can-protect-collection-agent).
+  To learn more, read ILAO's article about [**how a debt judgment can be collected**](https://www.illinoislegalaid.org/node/31936).
 field: sees_nav_bar
 ---
 id: instructions
@@ -202,7 +202,7 @@ subquestion: |
 
   ${collapse_template(exempt_money)}
   
-  To learn more about collection proof income and property, read ILAO's article, [**Collecting from wages and bank accounts basics**](https://www.illinoislegalaid.org/node/31936).
+  To learn more about collection proof income and property, read ILAO's article, [**How a debt judgment can be collected basics**](https://www.illinoislegalaid.org/node/31936).
 ---
 template: exempt_money
 subject: |
@@ -806,7 +806,7 @@ content: |
 id: after filing
 continue button field: after_filing
 question: |
-  Adding info about the hearing to your forms
+  Adding information about the hearing to your forms
 subquestion: |
   When you file your motion, the court clerk will give you a:
 
@@ -1314,7 +1314,7 @@ attachment:
         ${other_parties[0].name_full()}
         % endif
         % endif
-    - "defendant_caption": |
+    - "defendants_caption": |
         % if not plaintiff_or_petitioner:
         % if users.number_gathered() > 1:
         ${users[0].name_full()}, et al.
@@ -1363,26 +1363,32 @@ attachment:
     - "case_number_1": ${case_number}
     - "case_number_2": ${case_number}
     - "plaintiffs_caption": |
-        % if plaintiff_or_petitioner: 
-        ${users.full_names()}
-        % else:
-        ${other_parties.full_names()}
-        % endif
-    - "defendants_caption": |
         % if plaintiff_or_petitioner:
-        % if other_parties.number_gathered() > 1:
-        ${other_parties.full_names()}
+        % if users.number_gathered() > 1:
+        ${users[0].name_full()}, et al.
+        % else:
+        ${users[0].name_full()}
         % endif
-        % elif users.number_gathered() > 1:
-        ${users.full_names()}
+        % else:
+        % if other_parties.number_gathered() > 1:
+        ${other_parties[0].name_full()}, et al.
+        % else:
+        ${other_parties[0].name_full()}
+        % endif
         % endif
     - "defendant_name": |
-        % if plaintiff_or_petitioner:
-        % if other_parties.number_gathered() == 1:
-        ${other_parties.full_names()}
+        % if not plaintiff_or_petitioner:
+        % if users.number_gathered() > 1:
+        ${users[0].name_full()}, et al.
+        % else:
+        ${users[0].name_full()}
         % endif
-        % elif users.number_gathered() == 1:
-        ${users.full_names()}
+        % else:
+        % if other_parties.number_gathered() > 1:
+        ${other_parties[0].name_full()}, et al.
+        % else:
+        ${other_parties[0].name_full()}
+        % endif
         % endif
     - "bank_name_1": ${bank.name_full()}
     - "bank_name_2": |
@@ -1490,26 +1496,32 @@ attachment:
     - "case_number": ${case_number}
     - "bank_name": ${bank.name_full()}
     - "plaintiffs_caption": |
-        % if plaintiff_or_petitioner: 
-        ${users.full_names()}
-        % else:
-        ${other_parties.full_names()}
-        % endif
-    - "defendants_caption": |
         % if plaintiff_or_petitioner:
-        % if other_parties.number_gathered() > 1:
-        ${other_parties.full_names()}
+        % if users.number_gathered() > 1:
+        ${users[0].name_full()}, et al.
+        % else:
+        ${users[0].name_full()}
         % endif
-        % elif users.number_gathered() > 1:
-        ${users.full_names()}
+        % else:
+        % if other_parties.number_gathered() > 1:
+        ${other_parties[0].name_full()}, et al.
+        % else:
+        ${other_parties[0].name_full()}
+        % endif
         % endif
     - "defendant_name": |
-        % if plaintiff_or_petitioner:
-        % if other_parties.number_gathered() == 1:
-        ${other_parties.full_names()}
+        % if not plaintiff_or_petitioner:
+        % if users.number_gathered() > 1:
+        ${users[0].name_full()}, et al.
+        % else:
+        ${users[0].name_full()}
         % endif
-        % elif users.number_gathered() == 1:
-        ${users.full_names()}
+        % else:
+        % if other_parties.number_gathered() > 1:
+        ${other_parties[0].name_full()}, et al.
+        % else:
+        ${other_parties[0].name_full()}
+        % endif
         % endif
 ---
 id: qualify review screen
@@ -1547,8 +1559,8 @@ subquestion: |
 review:
   - Edit: bank.name.first
     button: |
-      **Your bank's name:**
-      ${bank.name_full()}
+      **Your bank's name and address:**
+      ${bank.name_full()}, ${bank.address.on_one_line(bare=True)}
   #- Edit: creditor_type
   #  button: |
   #    **Who froze your account?**
@@ -1585,7 +1597,7 @@ review:
       * Veterans' benefits
       % endif
       % if money_source['circuit']:
-      * ker property tax relief benefits
+      * Circuit breaker property tax relief benefits
       % endif
       % if money_source['other']:
       * Other sources
@@ -1858,6 +1870,10 @@ question: |
 subquestion: |
   Edit your answers below.
 review:
+  - Edit: users[0].name.first
+    button: |
+      **Your name:**
+      ${ users[0].name.full(middle="full")  }
   - Edit: users[0].address.address
     button: |
       **Your address:**
@@ -1909,8 +1925,8 @@ review:
       <h4>Your account</h4>
   - Edit: bank.name.first
     button: |
-      **Your bank's name:**
-      ${bank.name_full()}
+      **Your bank's name and address:**
+      ${bank.name_full()}, ${bank.address.on_one_line(bare=True)}
   #- Edit: creditor_type
   #  button: |
   #    **Who froze your account?**
