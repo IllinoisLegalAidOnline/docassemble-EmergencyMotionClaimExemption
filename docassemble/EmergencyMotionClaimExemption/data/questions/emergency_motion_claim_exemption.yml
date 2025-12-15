@@ -217,7 +217,7 @@ content: |
   * Unemployment compensation benefits,
   * Workers' compensation benefits,
   * Veterans' benefits,
-  * Circuit breaker property tax relief benefits, and
+  * Circuit Breaker Property Tax Relief benefits, and
   * Any other source, up to $4,000.
 ---
 id: money judgment
@@ -355,7 +355,7 @@ fields:
       - Unemployment compensation benefits: unemployment
       - Workers' compensation benefits: workers
       - Veterans' benefits: veterans
-      - Circuit breaker property tax relief benefits: circuit
+      - Circuit Breaker Property Tax Relief benefits: circuit
         help: |
           You should check this box if your property taxes went up and you got a grant from the Circuit Breaker Property Tax Relief Fund to help you pay your taxes.
       - Other sources: other
@@ -406,7 +406,7 @@ content: |
   * Unemployment compensation benefits,
   * Workers' compensation benefits,
   * Veterans' benefits,
-  * Circuit breaker property tax relief benefits, and  h 
+  * Circuit Breaker Property Tax Relief benefits, and  h 
   * Any other source, up to $4,000.
 ---
 id: automatic exemption note
@@ -1597,7 +1597,7 @@ review:
       * Veterans' benefits
       % endif
       % if money_source['circuit']:
-      * Circuit breaker property tax relief benefits
+      * Circuit Breaker Property Tax Relief benefits
       % endif
       % if money_source['other']:
       * Other sources
@@ -1963,7 +1963,7 @@ review:
       * Veterans' benefits
       % endif
       % if money_source['circuit']:
-      * Circuit breaker property tax relief benefits
+      * Circuit Breaker Property Tax Relief benefits
       % endif
       % if money_source['other']:
       * Other sources
